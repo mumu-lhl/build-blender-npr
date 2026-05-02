@@ -1,0 +1,145 @@
+name: Blender NPR Port Daily Release
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: 'Force build even if no new commits'
+        type: boolean
+        default: false
+
+jobs:
+  check:
+    name: Check for new commits
+    runs-on: ubuntu-latest
+    outputs:
+      new_commits: ${{ steps.check.outputs.new_commits }}
+      sha: ${{ steps.check.outputs.sha }}
+      sha_short: ${{ steps.check.outputs.sha_short }}
+      build_date: ${{ steps.check.outputs.build_date }}
+      tag_name: ${{ steps.check.outputs.tag_name }}
+    steps:
+      - name: Check for new commits
+        id: check
+        run: |
+          LATEST_SHA=$(git ls-remote https://github.com/bb-yi/blender.git refs/heads/npr-port-5.1 | cut -f1)
+          SHA_SHORT=$(echo $LATEST_SHA | cut -c1-7)
+          BUILD_DATE=$(date +'%Y%m%d')
+          TAG="v5.1-npr-$SHA_SHORT"
+          
+          echo "sha=$LATEST_SHA" >> $GITHUB_OUTPUT
+          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG" >> $GITHUB_OUTPUT
+
+          if gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "new_commits=false" >> $GITHUB_OUTPUT
+            echo "Already released: $TAG"
+          else
+            echo "new_commits=true" >> $GITHUB_OUTPUT
+            echo "New commits found, SHA: $LATEST_SHA"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    name: Build Linux x64
+    needs: check
+    if: needs.check.outputs.new_commits == 'true' || github.event.inputs.force_build == 'true'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: bb-yi/blender
+          ref: ${{ needs.check.outputs.sha }}
+          persist-credentials: false
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential subversion libx11-dev libxxf86vm-dev libxcursor-dev libxi-dev libxrandr-dev libxinerama-dev libegl-dev
+          sudo apt-get install -y libwayland-dev wayland-protocols libxkbcommon-dev libdbus-1-dev linux-libc-dev
+
+      - name: Install GCC 14 via Micromamba
+        uses: mamba-org/setup-micromamba@v3
+        with:
+          environment-name: build-env
+          create-args: >-
+            gcc_linux-64=14
+            gxx_linux-64=14
+            -c conda-forge
+
+      - name: Set up Compiler Environment
+        run: |
+          echo "CC=$MAMBA_ROOT_PREFIX/envs/build-env/bin/x86_64-conda-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CXX=$MAMBA_ROOT_PREFIX/envs/build-env/bin/x86_64-conda-linux-gnu-g++" >> $GITHUB_ENV
+          sudo ln -sf $MAMBA_ROOT_PREFIX/envs/build-env/bin/x86_64-conda-linux-gnu-gcc /usr/local/bin/gcc
+          sudo ln -sf $MAMBA_ROOT_PREFIX/envs/build-env/bin/x86_64-conda-linux-gnu-g++ /usr/local/bin/g++
+
+      - name: Setup Git LFS
+        run: |
+          git config lfs.url "https://projects.blender.org/blender/blender.git/info/lfs"
+          git config lfs.remote.searchall false
+          git lfs install
+
+      - name: Blender Make Update
+        run: make update
+
+      - name: Download Extra Assets
+        run: |
+          curl -L -o release/datafiles/splash.png https://github.com/bb-yi/blender/raw/refs/heads/npr-port-5.1/release/datafiles/splash.png
+          curl -L -o assets/nodes/npr_node_groups.blend https://github.com/bb-yi/blender/raw/refs/heads/npr-port-5.1/assets/nodes/npr_node_groups.blend
+
+      - name: Build Blender Release
+        run: make release ninja
+
+      - name: Package Release Asset
+        run: |
+          VERSION="5.1.1"
+          HASH="${{ needs.check.outputs.sha_short }}"
+          DATE="${{ needs.check.outputs.build_date }}"
+          ASSET_NAME="blender-$VERSION-npr-port-linux64-$HASH-$DATE"
+          TAR_FILE="$ASSET_NAME.tar.xz"
+          BUILD_DIR="../build_linux_release/bin"
+          
+          mkdir -p "$ASSET_NAME"
+          cp -r "$BUILD_DIR"/* "$ASSET_NAME/"
+          
+          tar -cvJf "$TAR_FILE" "$ASSET_NAME"
+          echo "TAR_PATH=$TAR_FILE" >> $GITHUB_ENV
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-asset
+          path: ${{ env.TAR_PATH }}
+
+  publish:
+    name: Create Release and Upload Assets
+    needs: [check, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create Release
+        run: |
+          TAG="${{ needs.check.outputs.tag_name }}"
+          SHA="${{ needs.check.outputs.sha }}"
+          DATE="${{ needs.check.outputs.build_date }}"
+          gh release create "$TAG" artifacts/* \
+            --title "Blender NPR Port ($DATE)" \
+            --notes "Automated build of Blender NPR Port from bb-yi/blender@$SHA" \
+            --repo "${{ github.repository }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
