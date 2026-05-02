@@ -68,7 +68,7 @@ jobs:
           dnf config-manager --set-enabled crb
           dnf -y install \
             gcc-toolset-14 \
-            make cmake ninja-build git git-lfs python3 rsync patch subversion curl tar xz \
+            make cmake ninja-build git git-lfs python3 rsync patch subversion tar xz \
             libX11-devel libXxf86vm libXcursor-devel libXi-devel libXrandr-devel libXinerama-devel \
             libglvnd-devel mesa-libEGL-devel mesa-libGL-devel mesa-libGLU-devel \
             libXext-devel libXrender-devel libXfixes-devel \
