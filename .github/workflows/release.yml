@@ -81,9 +81,6 @@ jobs:
         run: |
           echo "CC=$MAMBA_ROOT_PREFIX/envs/build-env/bin/x86_64-conda-linux-gnu-gcc" >> $GITHUB_ENV
           echo "CXX=$MAMBA_ROOT_PREFIX/envs/build-env/bin/x86_64-conda-linux-gnu-g++" >> $GITHUB_ENV
-          echo "C_INCLUDE_PATH=/usr/include/x86_64-linux-gnu:/usr/include" >> $GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=/usr/include/x86_64-linux-gnu:/usr/include" >> $GITHUB_ENV
-          echo "LDFLAGS=-L/usr/lib/x86_64-linux-gnu -L/usr/lib" >> $GITHUB_ENV
           echo "CMAKE_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib" >> $GITHUB_ENV
           echo "CMAKE_INCLUDE_PATH=/usr/include/x86_64-linux-gnu:/usr/include" >> $GITHUB_ENV
           sudo ln -sf $MAMBA_ROOT_PREFIX/envs/build-env/bin/x86_64-conda-linux-gnu-gcc /usr/local/bin/gcc
@@ -104,7 +101,7 @@ jobs:
           curl -L -o assets/nodes/npr_node_groups.blend https://github.com/bb-yi/blender/raw/refs/heads/npr-port-5.1/assets/nodes/npr_node_groups.blend
 
       - name: Build Blender Release
-        run: make release ninja
+        run: make release ninja BUILD_CMAKE_ARGS="-DWITH_CYCLES_DEVICE_ONEAPI=OFF -DWITH_CYCLES_ONEAPI=OFF"
 
       - name: Package Release Asset
         run: |
