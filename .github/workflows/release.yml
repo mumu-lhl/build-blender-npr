@@ -124,11 +124,10 @@ jobs:
           echo "TAR_PATH=$TAR_FILE" >> $GITHUB_ENV
 
       - name: Upload Linux Artifact
-        working-directory: blender
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-asset
-          path: ${{ env.TAR_PATH }}
+          path: blender/${{ env.TAR_PATH }}
 
   publish:
     name: Create Release and Upload Assets
