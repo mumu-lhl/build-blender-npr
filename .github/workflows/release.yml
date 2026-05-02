@@ -124,6 +124,7 @@ jobs:
           echo "TAR_PATH=$TAR_FILE" >> $GITHUB_ENV
 
       - name: Upload Linux Artifact
+        working-directory: blender
         uses: actions/upload-artifact@v4
         with:
           name: linux-asset
