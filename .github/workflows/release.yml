@@ -68,6 +68,12 @@ jobs:
             libXext-devel libXrender-devel libXfixes-devel \
             wayland-devel wayland-protocols-devel libxkbcommon-devel dbus-devel
 
+      - name: Enable GCC Toolset
+        run: |
+          echo "PATH=/opt/rh/gcc-toolset-14/root/usr/bin:/opt/rh/gcc-toolset-14/root/usr/sbin:$PATH" >> "$GITHUB_ENV"
+          echo "CC=gcc" >> "$GITHUB_ENV"
+          echo "CXX=g++" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v6
         with:
           repository: bb-yi/blender
