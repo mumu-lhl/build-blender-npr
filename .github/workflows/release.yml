@@ -54,6 +54,8 @@ jobs:
     permissions:
       contents: read
       actions: write
+    env:
+      BUILD_CMAKE_ARGS: -DSYCL_CPP_FLAGS=--gcc-toolchain=/opt/rh/gcc-toolset-14/root/usr
     steps:
       - name: Install Dependencies
         run: |
