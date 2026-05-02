@@ -55,12 +55,6 @@ jobs:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: bb-yi/blender
-          ref: ${{ needs.check.outputs.sha }}
-          persist-credentials: false
-
       - name: Install Dependencies
         run: |
           dnf -y update
@@ -73,6 +67,12 @@ jobs:
             libglvnd-devel mesa-libEGL-devel mesa-libGL-devel mesa-libGLU-devel \
             libXext-devel libXrender-devel libXfixes-devel \
             wayland-devel wayland-protocols-devel libxkbcommon-devel dbus-devel
+
+      - uses: actions/checkout@v6
+        with:
+          repository: bb-yi/blender
+          ref: ${{ needs.check.outputs.sha }}
+          persist-credentials: false
 
       - uses: rui314/setup-mold@v1
 
