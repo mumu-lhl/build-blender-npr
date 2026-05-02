@@ -66,6 +66,7 @@ jobs:
             gcc-toolset-14 \
             make cmake ninja-build git git-lfs python3 rsync patch subversion tar xz wget \
             libX11-devel libXxf86vm libXcursor-devel libXi-devel libXrandr-devel libXinerama-devel \
+            libSM libSM-devel libICE libICE-devel \
             libglvnd-devel mesa-libEGL-devel mesa-libGL-devel mesa-libGLU-devel \
             libXext-devel libXrender-devel libXfixes-devel \
             wayland-devel wayland-protocols-devel libxkbcommon-devel dbus-devel
