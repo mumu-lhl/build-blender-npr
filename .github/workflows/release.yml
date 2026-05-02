@@ -77,10 +77,11 @@ jobs:
       - uses: rui314/setup-mold@v1
 
       - name: Setup Git LFS
+        working-directory: ${{ github.workspace }}
         run: |
-          git config lfs.url "https://projects.blender.org/blender/blender.git/info/lfs"
-          git config lfs.remote.searchall false
-          git lfs install
+          git -C "$GITHUB_WORKSPACE" config lfs.url "https://projects.blender.org/blender/blender.git/info/lfs"
+          git -C "$GITHUB_WORKSPACE" config lfs.remote.searchall false
+          git -C "$GITHUB_WORKSPACE" lfs install
 
       - name: Blender Make Update
         run: make update
