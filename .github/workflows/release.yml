@@ -50,7 +50,7 @@ jobs:
     if: needs.check.outputs.new_commits == 'true' || github.event.inputs.force_build == 'true'
     runs-on: ubuntu-latest
     container:
-      image: rockylinux:9
+      image: rockylinux/rockylinux:9
     permissions:
       contents: read
       actions: write
@@ -64,11 +64,13 @@ jobs:
       - name: Install Dependencies
         run: |
           dnf -y update
+          dnf -y install dnf-plugins-core
+          dnf config-manager --set-enabled crb
           dnf -y install \
             gcc-toolset-14 \
             make cmake ninja-build git git-lfs python3 rsync patch subversion curl tar xz \
-            libX11-devel libXxf86vm-devel libXcursor-devel libXi-devel libXrandr-devel libXinerama-devel \
-            mesa-libEGL-devel mesa-libGL-devel mesa-libGLU-devel \
+            libX11-devel libXxf86vm libXcursor-devel libXi-devel libXrandr-devel libXinerama-devel \
+            libglvnd-devel mesa-libEGL-devel mesa-libGL-devel mesa-libGLU-devel \
             libXext-devel libXrender-devel libXfixes-devel \
             wayland-devel wayland-protocols-devel libxkbcommon-devel dbus-devel
 
